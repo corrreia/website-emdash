@@ -11,3 +11,6 @@ data.db
 !.env.example
 .dev.vars
 .dev.vars.*
+
+# Local Wrangler/Miniflare state (D1, KV, R2, sessions)
+.wrangler
