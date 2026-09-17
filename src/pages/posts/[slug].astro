@@ -15,7 +15,6 @@ import {
 import { Comments, CommentForm } from "emdash/ui/comments";
 import Base from "../../layouts/Base.astro";
 import PostCard from "../../components/PostCard.astro";
-import Code from "../../components/pt/Code.astro";
 import { getReadingTime } from "../../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../../utils/site-identity";
 
@@ -227,7 +226,7 @@ const publishDate =
 				</header>
 
 				<div class="article-content">
-					<PortableText value={post.data.content} components={{ type: { code: Code } }} />
+					<PortableText value={post.data.content} />
 				</div>
 
 				<div class="article-comments">
@@ -964,44 +963,3 @@ const publishDate =
 		}
 	}
 </style>
-
-<script>
-	// Diagrams are rare, so mermaid loads as its own chunk and only on posts
-	// that actually contain one. Authors write a ```mermaid fence; Code.astro
-	// turns it into <pre class="mermaid">.
-	const diagrams = document.querySelectorAll<HTMLElement>("pre.mermaid");
-
-	if (diagrams.length > 0) {
-		const { default: mermaid } = await import("mermaid");
-		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-		mermaid.initialize({
-			startOnLoad: false,
-			// Diagram source lives in the CMS and is authored, not user input.
-			securityLevel: "strict",
-			theme: "base",
-			themeVariables: {
-				fontFamily: "var(--font-body)",
-				fontSize: "14px",
-				background: prefersDark ? "#1b1e19" : "#efeada",
-				primaryColor: prefersDark ? "#20231e" : "#ffffff",
-				primaryTextColor: prefersDark ? "#f0eee7" : "#1c1f1d",
-				primaryBorderColor: prefersDark ? "#76c9a0" : "#1f7a5a",
-				lineColor: prefersDark ? "#a8afa7" : "#636b66",
-				secondaryColor: prefersDark ? "#34392f" : "#dedbd2",
-				tertiaryColor: prefersDark ? "#131512" : "#f6f4ee",
-			},
-			flowchart: { curve: "basis", useMaxWidth: true },
-			sequence: { useMaxWidth: true },
-			gantt: { useMaxWidth: true },
-		});
-
-		try {
-			await mermaid.run({ nodes: diagrams });
-		} catch {
-			// One bad diagram shouldn't take the page with it; the source stays
-			// visible in the <pre> as a fallback.
-			for (const node of diagrams) node.dataset.diagramFailed = "true";
-		}
-	}
-</script>

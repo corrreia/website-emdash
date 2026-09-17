@@ -10,6 +10,23 @@
 			"database_name": "my-emdash-site",
 		},
 	],
+	/**
+	 * Cloudflare AI Search. Uncomment once you are authenticated with Cloudflare
+	 * (`wrangler login`, or CLOUDFLARE_API_TOKEN in the environment).
+	 *
+	 * There is no local emulator for AI Search, so Miniflare opens a remote proxy
+	 * session for this binding. With the binding present and no credentials,
+	 * `astro dev` fails to start. Same reason worker_loaders is commented above.
+	 *
+	 * The namespace binding gives the runtime get/create access to every instance
+	 * in the namespace; the plugin creates its own instance ("emdash-content") on
+	 * first use. Every account already has a "default" namespace, so nothing has
+	 * to be provisioned by hand.
+	 *
+	 * After deploying: open Cloudflare AI Search in the admin, choose the
+	 * collections, and run Sync All Content. Hooks keep later edits in sync.
+	 */
+	// "ai_search_namespaces": [{ "binding": "AI_SEARCH", "namespace": "default" }],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA",

@@ -57,7 +57,7 @@
 	/* ---- layout ---------------------------------------------------------- */
 	--content-width: 700px;
 
-	/* Local addition: the code surface, used by the mermaid and code blocks. */
+	/* Local addition: the code block surface. */
 	--color-code-bg: light-dark(#efede7, #11130f);
 }
 
@@ -91,42 +91,3 @@ pre,
 	border-bottom-color: var(--color-brand);
 }
 
-/* ---- mermaid diagrams --------------------------------------------------- */
-/* Before hydration the <pre> still holds the diagram source, so keep it quiet
-   and monospaced; after mermaid runs it holds an <svg> instead. */
-.mermaid-figure {
-	margin: var(--spacing-8) 0;
-}
-
-pre.mermaid {
-	/* Block, not flex: a flex container does not give the SVG an intrinsic
-	   height, so diagrams collapse and overlap the content after them. */
-	display: block;
-	margin: 0;
-	padding: var(--spacing-5) var(--spacing-4);
-	overflow-x: auto;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius, 8px);
-	background: var(--color-bg-subtle);
-	color: var(--color-muted);
-	font-family: var(--font-mono);
-	font-size: var(--font-size-sm);
-	line-height: 1.5;
-	text-align: center;
-	white-space: pre-wrap;
-}
-
-pre.mermaid svg {
-	display: block;
-	margin: 0 auto;
-	max-width: 100%;
-	height: auto;
-}
-
-/* Rendering failed: show the source as a readable block rather than a centred
-   blob of half-formatted text. */
-pre.mermaid[data-diagram-failed] {
-	display: block;
-	text-align: left;
-	border-color: light-dark(#c2410c, #fb923c);
-}
