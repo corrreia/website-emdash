@@ -1,7 +1,7 @@
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
 import { d1, kvCache, r2, sandbox } from "@emdash-cms/cloudflare";
-import { aiSearch } from "@emdash-cms/cloudflare/plugins";
+import { aiSearch, cloudflareEmail } from "@emdash-cms/cloudflare/plugins";
 import { formsPlugin } from "@emdash-cms/plugin-forms";
 import webhookNotifier from "@emdash-cms/plugin-webhook-notifier";
 import { defineConfig, fontProviders } from "astro/config";
@@ -17,11 +17,18 @@ export default defineConfig({
 	integrations: [
 		react(),
 		emdash({
+			// Canonical origin for passkeys and links in emails (magic links, invites).
+			siteUrl: "https://tomascorreia.net",
 			database: d1({ binding: "DB", session: "auto" }),
 			storage: r2({ binding: "MEDIA" }),
 			// Caches query results in KV, under the Worker, so repeat reads skip D1.
 			objectCache: kvCache({ binding: "CACHE" }),
-			plugins: [formsPlugin(), aiSearch()],
+			plugins: [
+				formsPlugin(),
+				aiSearch(),
+				// Delivers magic links and invites through the EMAIL binding in wrangler.jsonc.
+				cloudflareEmail({ from: { email: "cms@tomascorreia.net", name: "Tomás Correia" } }),
+			],
 			sandboxed: [webhookNotifier],
 			sandboxRunner: sandbox(),
 			marketplace: "https://marketplace.emdashcms.com",

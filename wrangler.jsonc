@@ -63,10 +63,17 @@
 
 	"routes": [
 		{
-			"pattern": "emdash.tomascorreia.net",
+			"pattern": "tomascorreia.net",
 			"custom_domain": true,
 		},
 	],
+
+	/**
+	 * Cloudflare Email Sending, used by the cloudflareEmail() plugin in
+	 * astro.config.mjs for magic-link sign-in and invitations. tomascorreia.net
+	 * is onboarded as a sending domain.
+	 */
+	"send_email": [{ "name": "EMAIL" }],
 
 	"observability": {
 		"enabled": true,
@@ -83,12 +90,6 @@
 	 *
 	 *   worker_loaders   Sandboxed plugins. Needs a Workers paid plan.
 	 *                    "worker_loaders": [{ "binding": "LOADER" }]
-	 *
-	 *   send_email       Magic-link sign-in, invitations and comment
-	 *                    notifications. Needs a verified sender domain in
-	 *                    Cloudflare Email Sending, plus cloudflareEmail() in
-	 *                    astro.config.mjs.
-	 *                    "send_email": [{ "name": "EMAIL" }]
 	 *
 	 *   images           Cloudflare Images as a media provider. Needs an Images
 	 *                    subscription and a CF_IMAGES_TOKEN secret, then
