@@ -16,14 +16,22 @@ spliced back into the raw Portable Text afterwards via the REST API.
 """
 
 import json
+import os
 import re
 import subprocess
 import urllib.error
 import urllib.request
 from pathlib import Path
 
-SRC = Path("/tmp/website/src/content/blog")
-API = "http://localhost:4321/_emdash/api"
+SRC = Path(os.environ.get("POSTS_SRC", "/tmp/website/src/content/blog"))
+
+# Target instance. Defaults to local dev; set EMDASH_URL to target production.
+SITE = os.environ.get("EMDASH_URL", "http://localhost:4321").rstrip("/")
+API = f"{SITE}/_emdash/api"
+
+# Local dev authenticates through the dev-bypass cookie, which production
+# refuses with a 403. Against a remote instance, use the bearer token stored by
+# `npx emdash login` (or EMDASH_TOKEN).
 COOKIES = Path("/tmp/emcookies.txt")
 SLUGS = ["welcome", "kubernetes-at-home", "meo-outage-day"]
 # No underscores: the Markdown converter reads _TABLE_ as emphasis and
@@ -32,6 +40,36 @@ PLACEHOLDER = "@@EMDASHTABLE%d@@"
 
 
 # ---------------------------------------------------------------- transport
+
+def stored_token():
+    """Bearer token from EMDASH_TOKEN, else the credentials `emdash login` saved."""
+    token = os.environ.get("EMDASH_TOKEN")
+    if token:
+        return token
+    path = Path.home() / ".config/emdash/auth.json"
+    if not path.exists():
+        return None
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in ("token", "accessToken", "access_token") and isinstance(value, str):
+                    return value
+                found = walk(value)
+                if found:
+                    return found
+        elif isinstance(node, list):
+            for value in node:
+                found = walk(value)
+                if found:
+                    return found
+        return None
+
+    try:
+        return walk(json.loads(path.read_text()))
+    except Exception:
+        return None
+
 
 def cookie_header():
     jar = []
@@ -48,15 +86,30 @@ def cookie_header():
     return "; ".join(jar)
 
 
-COOKIE = cookie_header()
+TOKEN = stored_token()
+COOKIE = None if TOKEN else cookie_header()
+
+
+def auth_headers():
+    # Cloudflare's bot protection rejects the default Python-urllib agent with
+    # error 1010 before the request ever reaches the Worker.
+    headers = {
+        "content-type": "application/json",
+        "X-EmDash-Request": "1",
+        "User-Agent": "emdash-import/1.0",
+    }
+    if TOKEN:
+        headers["Authorization"] = f"Bearer {TOKEN}"
+    else:
+        headers["Cookie"] = COOKIE
+    return headers
 
 
 def api(method, path, body=None):
     req = urllib.request.Request(
         API + path, method=method,
         data=json.dumps(body).encode() if body is not None else None,
-        headers={"content-type": "application/json",
-                 "X-EmDash-Request": "1", "Cookie": COOKIE})
+        headers=auth_headers())
     try:
         return json.loads(urllib.request.urlopen(req, timeout=180).read())
     except urllib.error.HTTPError as e:
@@ -64,7 +117,9 @@ def api(method, path, body=None):
 
 
 def cli(*args):
-    out = subprocess.run(["npx", "emdash", *args], capture_output=True, text=True,
+    """CLI calls must target the same instance as the REST calls."""
+    extra = ["--url", SITE] if SITE != "http://localhost:4321" else []
+    out = subprocess.run(["npx", "emdash", *args, *extra], capture_output=True, text=True,
                          cwd=Path.home() / "work/website", timeout=900)
     i = out.stdout.find("{")
     if i < 0:
@@ -223,6 +278,8 @@ def term_id(taxonomy, slug):
 
 
 def main():
+    print(f"  target: {SITE}")
+    print(f"  auth  : {'bearer token' if TOKEN else 'dev-bypass cookie'}")
     for name in SLUGS:
         folder = SRC / name
         meta, body = frontmatter(folder / "index.md")
