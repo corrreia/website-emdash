@@ -1,32 +1,132 @@
 /*
-  theme.css -- your theme overrides. This is the file to edit to
-  retheme the site.
+  theme.css -- theme overrides for this site.
 
-  Every design token lives in src/styles/tokens.css (colors, type
-  scale, spacing, layout, shadows) with its default value. Override any
-  of them here: declarations in this file are unlayered, so they always
-  beat the @layer base defaults in tokens.css.
+  Every design token lives in src/styles/tokens.css with its default value.
+  Declarations here are unlayered, so they always beat the @layer base
+  defaults. Don't edit tokens.css or Base.astro for visual changes.
 
-  Colors are defined with light-dark(). Overriding with a plain color
-  changes light and dark mode at once; use light-dark(<light>, <dark>)
-  to set different values per mode.
+  This ports the palette from tomascorreia.net: warm paper in light mode, deep
+  moss in dark, one green accent. Colours use light-dark() so a single
+  declaration carries both modes.
 
-  Webfonts are loaded in astro.config.mjs (--font-body, --font-mono).
-  Swap the loaded font there; use overrides here for system fonts or a
-  separate heading face.
-
-  Example:
-
-  :root {
-    --color-brand: light-dark(#0f766e, #2dd4bf);
-    --font-heading: "Iowan Old Style", Georgia, serif;
-    --radius: 8px;
-  }
+  Type is IBM Plex Sans for everything and IBM Plex Mono for code, both loaded
+  in astro.config.mjs. One superfamily means headings, body and code blocks
+  share the same skeleton; hierarchy comes from weight and size rather than a
+  second face.
 */
 
 :root {
+	/* ---- surfaces and text ---------------------------------------------- */
+	--color-bg: light-dark(#f6f4ee, #131512);
+	--color-bg-subtle: light-dark(#efeada, #1b1e19);
+	--color-surface: light-dark(#ffffff, #20231e);
+	--color-text: light-dark(#1c1f1d, #f0eee7);
+	--color-text-secondary: light-dark(#3f463f, #cdd3c9);
+	--color-muted: light-dark(#636b66, #a8afa7);
+	--color-border: light-dark(#dedbd2, #34392f);
+	--color-border-subtle: light-dark(#e8e5db, #272a23);
+
+	/* ---- the one accent -------------------------------------------------- */
+	--color-brand: light-dark(#1f7a5a, #76c9a0);
+	--color-brand-hover: light-dark(#14553f, #a8e6c5);
+	--color-on-brand: light-dark(#f6f4ee, #131512);
+	--color-brand-ring: light-dark(rgba(31, 122, 90, 0.14), rgba(118, 201, 160, 0.14));
+
+	/* ---- the search overlay inherits the same palette -------------------- */
+	--emdash-search-bg: light-dark(#ffffff, #20231e);
+	--emdash-search-text: light-dark(#1c1f1d, #f0eee7);
+	--emdash-search-muted: light-dark(#636b66, #a8afa7);
+	--emdash-search-border: light-dark(#dedbd2, #34392f);
+	--emdash-search-hover: light-dark(#efeada, #1b1e19);
+	--emdash-search-highlight: light-dark(rgba(31, 122, 90, 0.14), rgba(118, 201, 160, 0.14));
+
+	/* ---- type ------------------------------------------------------------ */
+	/* One superfamily throughout. Plex Sans and Plex Mono share proportions, so
+	   a code block sits inside a paragraph without a visible seam. */
+	--font-heading: var(--font-body);
+	--font-weight-heading: 600;
+	--font-weight-display: 600;
+	--tracking-tight: -0.018em;
+	--tracking-snug: -0.009em;
+
+	/* Plex Sans has a generous x-height, so it stays comfortable at a slightly
+	   larger base size without the measure blowing out. */
+	--font-size-base: 1.0625rem;
+	--leading-relaxed: 1.7;
+
+	/* ---- layout ---------------------------------------------------------- */
+	--content-width: 700px;
+
+	/* Local addition: the code surface, used by the mermaid and code blocks. */
+	--color-code-bg: light-dark(#efede7, #11130f);
 }
 
-.nav-admin {
-	margin-inline-start: var(--spacing-5);
+html {
+	/* Lining figures: this blog is full of AS numbers, IP prefixes and
+	   timestamps, which read wrong in oldstyle. Tabular is left off so numbers
+	   inside prose keep normal spacing. */
+	font-variant-numeric: lining-nums;
+}
+
+/* Code, timestamps and metering columns benefit from fixed-width figures. */
+code,
+pre,
+.article-meta,
+.footer-copyright {
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- admin link, now in the footer ------------------------------------- */
+/* Base.astro renders this only for signed-in users. It sits in the footer's
+   bottom bar rather than the header nav, so a reader never sees CMS chrome. */
+.footer-admin {
+	color: var(--color-muted);
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.footer-admin:hover {
+	color: var(--color-brand);
+	border-bottom-color: var(--color-brand);
+}
+
+/* ---- mermaid diagrams --------------------------------------------------- */
+/* Before hydration the <pre> still holds the diagram source, so keep it quiet
+   and monospaced; after mermaid runs it holds an <svg> instead. */
+.mermaid-figure {
+	margin: var(--spacing-8) 0;
+}
+
+pre.mermaid {
+	/* Block, not flex: a flex container does not give the SVG an intrinsic
+	   height, so diagrams collapse and overlap the content after them. */
+	display: block;
+	margin: 0;
+	padding: var(--spacing-5) var(--spacing-4);
+	overflow-x: auto;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius, 8px);
+	background: var(--color-bg-subtle);
+	color: var(--color-muted);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-sm);
+	line-height: 1.5;
+	text-align: center;
+	white-space: pre-wrap;
+}
+
+pre.mermaid svg {
+	display: block;
+	margin: 0 auto;
+	max-width: 100%;
+	height: auto;
+}
+
+/* Rendering failed: show the source as a readable block rather than a centred
+   blob of half-formatted text. */
+pre.mermaid[data-diagram-failed] {
+	display: block;
+	text-align: left;
+	border-color: light-dark(#c2410c, #fb923c);
 }

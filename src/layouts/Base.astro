@@ -128,13 +128,6 @@ const isLoggedIn = !!Astro.locals.user;
 						}
 					</div>
 				</div>
-				{
-					isLoggedIn && (
-						<a href="/_emdash/admin" class="nav-admin">
-							Admin
-						</a>
-					)
-				}
 			</nav>
 		</header>
 
@@ -200,6 +193,12 @@ const isLoggedIn = !!Astro.locals.user;
 				<div class="footer-bottom">
 					<p class="footer-copyright">
 						Powered by <a href="https://emdashcms.com">EmDash</a>
+						{isLoggedIn && (
+							<>
+								<span aria-hidden="true"> · </span>
+								<a href="/_emdash/admin" class="footer-admin">Admin</a>
+							</>
+						)}
 					</p>
 					<div class="theme-switcher">
 						<button
@@ -507,16 +506,7 @@ const isLoggedIn = !!Astro.locals.user;
 				color: var(--color-brand);
 			}
 
-			.nav-admin {
-				font-size: var(--font-size-sm);
-				color: var(--color-text-secondary);
-				text-decoration: none;
-				transition: color var(--transition-fast);
-			}
 
-			.nav-admin:hover {
-				color: var(--color-text);
-			}
 
 			/* Search styling */
 			.site-search {
@@ -841,14 +831,6 @@ const isLoggedIn = !!Astro.locals.user;
 					justify-content: flex-start;
 				}
 
-				.nav-admin {
-					grid-column: 2;
-					grid-row: 1;
-					justify-self: end;
-					font-size: var(--font-size-xs);
-					margin-inline-start: 0;
-					white-space: nowrap;
-				}
 
 				.footer-grid {
 					grid-template-columns: 1fr;
