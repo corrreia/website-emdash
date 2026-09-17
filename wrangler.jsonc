@@ -1,42 +1,95 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "my-emdash-site",
+	"name": "website-emdash",
 	"main": "./src/worker.ts",
 	"compatibility_date": "2026-02-24",
 	"compatibility_flags": ["nodejs_compat"],
+
+	/**
+	 * Wrangler creates any of these resources on first deploy if the configured
+	 * name does not already exist, then reconnects to the same ones afterwards.
+	 * Keep the names stable.
+	 */
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "my-emdash-site",
+			"database_name": "website-emdash",
 		},
 	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "website-emdash-media",
+		},
+	],
+
 	/**
-	 * Cloudflare AI Search. Uncomment once you are authenticated with Cloudflare
-	 * (`wrangler login`, or CLOUDFLARE_API_TOKEN in the environment).
-	 *
-	 * There is no local emulator for AI Search, so Miniflare opens a remote proxy
-	 * session for this binding. With the binding present and no credentials,
-	 * `astro dev` fails to start. Same reason worker_loaders is commented above.
+	 * Object cache. Caches database query results in KV, a layer underneath the
+	 * Worker, so repeat reads skip D1 entirely. Wired in astro.config.mjs as
+	 * `objectCache: kvCache({ binding: "CACHE" })`.
+	 */
+	"kv_namespaces": [
+		{
+			"binding": "CACHE",
+			"id": "PLACEHOLDER_REPLACED_ON_FIRST_DEPLOY",
+		},
+	],
+
+	/**
+	 * Cloudflare AI Search, powering site search through the aiSearch() plugin.
 	 *
 	 * The namespace binding gives the runtime get/create access to every instance
 	 * in the namespace; the plugin creates its own instance ("emdash-content") on
-	 * first use. Every account already has a "default" namespace, so nothing has
-	 * to be provisioned by hand.
+	 * first use. Every account already has a "default" namespace, so there is
+	 * nothing to provision by hand.
+	 *
+	 * Note for local development: AI Search has no local emulator, so Miniflare
+	 * opens a remote proxy session for this binding. `astro dev` therefore needs
+	 * Cloudflare credentials (`wrangler login`, or CLOUDFLARE_API_TOKEN) while
+	 * this is enabled.
 	 *
 	 * After deploying: open Cloudflare AI Search in the admin, choose the
 	 * collections, and run Sync All Content. Hooks keep later edits in sync.
 	 */
-	// "ai_search_namespaces": [{ "binding": "AI_SEARCH", "namespace": "default" }],
-	"r2_buckets": [
+	"ai_search_namespaces": [{ "binding": "AI_SEARCH", "namespace": "default" }],
+
+	/**
+	 * Server-rendered pages make several D1 round trips per request, so run the
+	 * Worker near the database rather than near the visitor.
+	 */
+	"placement": { "mode": "smart" },
+
+	"routes": [
 		{
-			"binding": "MEDIA",
-			"bucket_name": "my-emdash-media",
+			"pattern": "emdash.tomascorreia.net",
+			"custom_domain": true,
 		},
 	],
-	// Sandboxed plugins require Worker Loader, available on Workers paid plans. Uncomment to enable:
-	// "worker_loaders": [{ "binding": "LOADER" }],
-	// General maintenance cron trigger
+
+	"observability": {
+		"enabled": true,
+	},
+
+	// General maintenance cron trigger. Must match the expression passed to
+	// createScheduledHandler({ generalCron }) in src/worker.ts.
 	"triggers": {
 		"crons": ["* * * * *"],
 	},
+
+	/**
+	 * Not enabled, each needs something beyond a binding:
+	 *
+	 *   worker_loaders   Sandboxed plugins. Needs a Workers paid plan.
+	 *                    "worker_loaders": [{ "binding": "LOADER" }]
+	 *
+	 *   send_email       Magic-link sign-in, invitations and comment
+	 *                    notifications. Needs a verified sender domain in
+	 *                    Cloudflare Email Sending, plus cloudflareEmail() in
+	 *                    astro.config.mjs.
+	 *                    "send_email": [{ "name": "EMAIL" }]
+	 *
+	 *   images           Cloudflare Images as a media provider. Needs an Images
+	 *                    subscription and a CF_IMAGES_TOKEN secret, then
+	 *                    mediaProviders: [cloudflareImages({})].
+	 */
 }
