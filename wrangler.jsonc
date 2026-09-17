@@ -27,11 +27,13 @@
 	 * Object cache. Caches database query results in KV, a layer underneath the
 	 * Worker, so repeat reads skip D1 entirely. Wired in astro.config.mjs as
 	 * `objectCache: kvCache({ binding: "CACHE" })`.
+	 *
+	 * No `id` here on purpose: Wrangler provisions the namespace on first deploy
+	 * and writes the id back, the same way it handles the D1 and R2 entries above.
 	 */
 	"kv_namespaces": [
 		{
 			"binding": "CACHE",
-			"id": "PLACEHOLDER_REPLACED_ON_FIRST_DEPLOY",
 		},
 	],
 
